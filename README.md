@@ -32,6 +32,16 @@
    - 点击 **Save and Deploy**  
    - Cloudflare 会生成子域，例如 `https://your-worker.workers.dev/`(可以绑定自定义域更方便）
 
+[![Deploy to Cloudflare](https://img.shields.io/badge/Deploy-Cloudflare-blue)](https://dash.cloudflare.com/workers/deploy)
+
+### 快速完成 KV 绑定
+
+1. 点击上面的 **Deploy to Cloudflare** 按钮 → 打开 Worker 控制台  
+2. 在 Worker 页面 → **Settings → Variables → KV Namespace Bindings**  
+3. 添加新的命名空间，例如：`notes`  
+4. **Variable name** 填 `NOTES_KV`（必须与代码一致）  
+5. 保存并部署
+
 ---
 
 ## 使用示例
