@@ -5,70 +5,43 @@
 无需服务器、无需数据库，完全运行在 Cloudflare 边缘网络上。  
 
 ## 功能
-- 直接通过 URL 创建和保存笔记，例如：
-https://your-worker.workers.dev/hello （也可以绑定自定义域名访问）
 
-- 自动保存笔记内容到 KV 存储。  
-- 支持目录浏览：访问根目录 `/` 即可查看所有已保存的笔记列表。  
+- 根目录 `/` → 浏览已保存笔记  
+- 简洁 URL 编辑器 → `/笔记名`  
+- 纯文本输出 → `/笔记名?raw` 或 curl/wget  
+- 自动生成随机笔记名（路径非法或为空时）  
 
-## 部署步骤（可视化操作）
+---
+
+## 部署步骤（网页控制台）
+
 1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com/)  
- 进入 **Workers & Pages**。
+   → **Workers & Pages**
 
-2. 新建 Worker  
- - 点击 **Create Worker**  
- - 删除默认示例代码，粘贴以下内容：
-   ```javascript
-   export default {
-     async fetch(request, env) {
-       const url = new URL(request.url);
-       const path = url.pathname.slice(1);
+2. **新建 Worker**  
+   - 点击 **Create Worker**  
+   - 删除默认代码  
+   - 粘贴 `src/index.js` 的内容
 
-       // 列出已保存的笔记
-       if (!path) {
-         const list = await env.NOTES.list();
-         const files = list.keys.map(k => `<li><a href="/${k.name}">${k.name}</a></li>`).join("");
-         return new Response(`<h1>笔记目录</h1><ul>${files}</ul>`, { headers: { "content-type": "text/html" } });
-       }
+3. **创建 KV 命名空间**  
+   - Worker 页面 → **Settings → Variables → KV Namespace Bindings**  
+   - 添加绑定 → 新建命名空间（例如 `notes`）  
+   - 变量名填 `NOTES_KV`（与代码保持一致）
 
-       // 获取笔记
-       if (request.method === "GET") {
-         const content = await env.NOTES.get(path);
-         return new Response(content || "空笔记，请通过 POST 保存内容。", {
-           headers: { "content-type": "text/plain" },
-         });
-       }
+4. **保存并部署**  
+   - 点击 **Save and Deploy**  
+   - Cloudflare 会生成子域，例如 `https://your-worker.workers.dev/`(可以绑定自定义域更方便）
 
-       // 保存笔记
-       if (request.method === "POST") {
-         const content = await request.text();
-         await env.NOTES.put(path, content);
-         return new Response("保存成功: " + path);
-       }
+---
 
-       return new Response("方法不支持", { status: 405 });
-     },
-   };
-   ```
+## 使用示例
 
-3. 创建并绑定 KV  
- - 在 Worker 页面 → **Settings → Variables → KV Namespace Bindings**  
- - 新建一个 KV 命名空间（例如 `notebook`）  
- - 绑定名称填 `NOTES`（需要和代码里一致）  
+- `/` → 查看笔记目录  
+- `/abcde` → 编辑名为 `abcde` 的笔记  
+- `/abcde?raw` → 纯文本输出  
 
-4. 部署并访问  
- - 点击 **Deploy**  
- - 访问 `https://your-worker.workers.dev/` → 查看笔记目录  
- - 访问 `https://your-worker.workers.dev/hello` → 查看名为 `hello` 的笔记  
- - 用 `curl` 或 Postman 发送 POST 请求保存笔记，例如：
-   ```bash
-   curl -X POST https://your-worker.workers.dev/hello -d "这是我的第一条笔记"
-   ```
-
-## 示例
-- 访问 `/` → 列出所有笔记  
-- 访问 `/note1` → 获取名为 `note1` 的内容  
-- 通过 POST `/note1` → 保存新内容  
+---
 
 ## License
+
 MIT
