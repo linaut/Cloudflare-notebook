@@ -32,8 +32,8 @@
    - 点击 **Save and Deploy**  
    - Cloudflare 会生成子域，例如 `https://your-worker.workers.dev/`(可以绑定自定义域更方便）
 
-<a href="https://dash.cloudflare.com/workers/deploy" target="_blank">
-  <img src="https://img.shields.io/badge/Deploy-Cloudflare-blue" alt="Deploy to Cloudflare">
+<a href="https://deploy.workers.cloudflare.com/?url=https://github.com/linaut/Cloudflare-notebook" target="_blank">
+  <img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare">
 </a>
 
 
