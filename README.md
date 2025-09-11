@@ -32,7 +32,10 @@
    - 点击 **Save and Deploy**  
    - Cloudflare 会生成子域，例如 `https://your-worker.workers.dev/`(可以绑定自定义域更方便）
 
-[![Deploy to Cloudflare](https://img.shields.io/badge/Deploy-Cloudflare-blue)](https://dash.cloudflare.com/workers/deploy)
+<a href="https://dash.cloudflare.com/workers/deploy" target="_blank">
+  <img src="https://img.shields.io/badge/Deploy-Cloudflare-blue" alt="Deploy to Cloudflare">
+</a>
+
 
 ### 快速完成 KV 绑定
 
