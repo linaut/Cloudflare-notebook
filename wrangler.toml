@@ -4,4 +4,4 @@ compatibility_date = "2025-09-11"
 
 [[kv_namespaces]]
 binding = "NOTES_KV"
-id = "xxxxxxxxxxxxxxxxxxxxx"   # 控制台生成 KV ID 填这里
+id = "xxxxxxxxxxxxxxxxxxxxx"  # 控制台生成 KV ID 填这里
