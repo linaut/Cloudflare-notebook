@@ -7,21 +7,22 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     let path = url.pathname.replace(/^\/+/, ""); // 去掉前导 /
+    const ua = request.headers.get("user-agent") || "";
 
-    // 根目录显示笔记列表
-    if (!path) {
+    // 根目录：显示目录浏览
+    if (path === "") {
       const list = await env.NOTES_KV.list({ prefix: "note:" });
-      const items = list.keys.map(k => `<li><a href="/${k.name.replace(/^note:/, "")}">${k.name.replace(/^note:/, "")}</a></li>`).join("");
+      const items = list.keys.map(k => k.name.replace(/^note:/, ""));
+      const links = items.map(n => `<li><a href="/${n}">${n}</a></li>`).join("");
       return new Response(
         `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><title>笔记目录</title></head>
-<body><h2>已保存的笔记</h2><ul>${items}</ul></body></html>`,
+<html><head><meta charset="utf-8"><title>笔记目录</title></head>
+<body><h2>已保存的笔记</h2><ul>${links}</ul></body></html>`,
         { headers: { "Content-Type": "text/html; charset=UTF-8" } }
       );
     }
 
-    // 如果名字非法或过长，重定向到随机名字
+    // 如果名字太长或非法，重定向到随机
     if (path.length > 64 || !/^[a-zA-Z0-9_-]+$/.test(path)) {
       const newName = generateRandomName();
       return Response.redirect(`${url.origin}/${newName}`, 302);
@@ -40,20 +41,31 @@ export default {
       return new Response("OK");
     }
 
-    // raw / curl / wget 输出纯文本
-    const ua = request.headers.get("user-agent") || "";
-    if (url.searchParams.has("raw") || ua.startsWith("curl") || ua.startsWith("Wget")) {
+    // raw 模式 / curl / wget
+    if (
+      url.searchParams.has("raw") ||
+      ua.startsWith("curl") ||
+      ua.startsWith("Wget")
+    ) {
       const content = await env.NOTES_KV.get(key);
-      return new Response(content || "Not Found", { headers: { "Content-Type": "text/plain; charset=UTF-8" } });
+      if (content) {
+        return new Response(content, {
+          headers: { "Content-Type": "text/plain; charset=UTF-8" },
+        });
+      } else {
+        return new Response("Not Found", { status: 404 });
+      }
     }
 
-    // 简洁 HTML 编辑器
+    // HTML 页面
     const content = (await env.NOTES_KV.get(key)) || "";
+
     return new Response(
       `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>${path}</title>
 <style>
 body { margin:0; background:#ebeef1; }
@@ -73,29 +85,29 @@ body { margin:0; background:#ebeef1; }
 </head>
 <body>
 <div class="container">
-<textarea id="content">${content.replace(/</g,"&lt;").replace(/>/g,"&gt;")}</textarea>
+  <textarea id="content">${content.replace(/</g,"&lt;").replace(/>/g,"&gt;")}</textarea>
 </div>
 <pre id="printable"></pre>
 <script>
-var textarea = document.getElementById('content');
-var printable = document.getElementById('printable');
-var content = textarea.value;
+let textarea = document.getElementById("content");
+let printable = document.getElementById("printable");
+let content = textarea.value;
 printable.appendChild(document.createTextNode(content));
 
-function uploadContent() {
+async function uploadContent() {
   if (content !== textarea.value) {
-    var temp = textarea.value;
-    var request = new XMLHttpRequest();
-    request.open('POST', window.location.href, true);
-    request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
-    request.onload = function() { content = temp; setTimeout(uploadContent, 1000); }
-    request.onerror = function() { setTimeout(uploadContent, 1000); }
-    request.send('text=' + encodeURIComponent(temp));
+    let temp = textarea.value;
+    try {
+      await fetch(window.location.href, { method:"POST", body: temp });
+      content = temp;
+    } catch(e) {}
+    setTimeout(uploadContent, 1000);
     printable.textContent = temp;
   } else {
     setTimeout(uploadContent, 1000);
   }
 }
+
 textarea.focus();
 uploadContent();
 </script>
