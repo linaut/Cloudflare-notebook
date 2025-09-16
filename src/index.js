@@ -2,16 +2,17 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     let noteName = decodeURIComponent(url.pathname.slice(1) || url.searchParams.get("note") || "");
-
-    // 自动迁移带 note: 前缀的旧笔记
-    if (noteName.startsWith("note:")) {
-      const content = await env.NOTES_KV.get(noteName);
-      if (content !== null) {
-        const newName = noteName.replace(/^note:/, "");
-        await env.NOTES_KV.put(newName, content);
-        await env.NOTES_KV.delete(noteName);
-        noteName = newName;
-      }
+    function isValidNoteName(name){
+      if(!name || name.length > 50) return false;
+    // 排除控制字符和路径符号
+    if(/[\u0000-\u001F\u007F\/\\]/.test(name)) return false;
+      return true;
+    }
+  
+    // 非法笔记名直接提示
+    if(!isValidNoteName(noteName) && url.pathname !== "/"){
+      return new Response(`<script>alert("笔记名非法");history.back();</script>`, 
+        { headers:{ "Content-Type":"text/html;charset=UTF-8" } });
     }
 
     // 显示目录
@@ -26,7 +27,7 @@ export default {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Notes</title>
+<title>📒 Web Notes</title>
 <style>
 body { font-family: sans-serif; padding: 1em; }
 li { margin: 0.5em 0; }
@@ -35,7 +36,7 @@ a:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
-<h1>Notes</h1>
+<h1>📒 Notes</h1>
 <ul>${links}</ul>
 </body>
 </html>`, { headers: { "Content-Type": "text/html; charset=utf-8" } });
